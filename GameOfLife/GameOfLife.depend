@@ -1,0 +1,11 @@
+# depslib dependency file v1.0
+1575946040 source:c:\users\matthew vu\documents\pang game\gameoflife\src\life.cpp
+	"Life.h"
+
+1575946040 c:\users\matthew vu\documents\pang game\gameoflife\include\life.h
+
+1575954000 source:c:\users\matthew vu\documents\pang game\gameoflife\main.cpp
+	<iostream>
+	<cstdlib>
+	<vector>
+
