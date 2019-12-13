@@ -1,5 +1,5 @@
 # GameOfLife
- A mathematical zero player game called Conway's game of life. This program simulates it.
+ A mathematical zero player game called Conway's Game of Life. This program simulates it.
  
 
 Cell will die and procreate with each other by a certain set of rules listed below eternally.
