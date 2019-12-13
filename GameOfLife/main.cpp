@@ -14,8 +14,8 @@ die and procreate with each other by a certain set of rules listed below eternal
 
 using namespace std;
 
-const int WIDTH = 10; // constant variable for height and width
-const int HEIGHT = 10;
+const int WIDTH = 20; // constant variable for height and width, change
+const int HEIGHT = 30;
 const int BLOCK_ASCII_SYMBOL = 254; // ascii symbol of a 'solid block'
 const int ALIVE = 1; // for alive or dead
 const int DEAD = 0;
@@ -34,7 +34,7 @@ vector <vector<int> > deadState(int width, int height)   // creates initial boar
     return state; // return vector state
 }
 
-vector<vector<int> > randomState(int width, int height)   // creates the first stage of the board.
+vector<vector<int> > randomState(int width, int height)   // creates the first random stage of the board.
 {
     int cellState; // 0 or 1
 
@@ -44,7 +44,7 @@ vector<vector<int> > randomState(int width, int height)   // creates the first s
         for(int j = 0; j < height; j++)
         {
             double randomNum =  (rand() / (float)RAND_MAX); // gets random number between 0 - 1
-            if (randomNum >= 0.2) // change this to get different random percentages.
+            if (randomNum >= 0.31) // change this to get different random percentages.
             {
                 cellState = DEAD; // set to 0
             }
@@ -71,12 +71,387 @@ In the case of a dead cell check if the surrounding cells have 3 alive neighbors
 if there are exactly three alive neighbors set it equal to alive or '1'
 else do nothing
 
-Have to figure out when a cell is at a corner or edge
+Have to figure out when a cell is at a corner or edge (3 neighbors or 5 neighbors)
+Day 3: Refactor code, add logic for edge cases (literally): finished
 */
-vector<vector<int> > nextBoardState (vector <vector<int> > initialState)
+vector<vector<int> > nextBoardState (vector <vector<int> > initialState, int width, int height)
 {
-    vector<vector<int> > newState = deadState(20, 30);
+    int countAlive;
 
+    vector<vector<int> > newState = deadState(width, height);
+    for(int i = 0; i < width; i++)
+    {
+        for(int j = 0; j < height; j++)
+        {
+            countAlive = 0;
+            bool isDeadCorner = false, isAliveCorner = false; // flag used to find the cell is currently alive or dead in a corner
+            int currentCellVal = initialState[i][j];
+            // have to check if corner or edge first....
+            if(i == 0 || j == 0 || i == width - 1 || j == height - 1)
+            {
+                if(i == 0 && j == 0 && currentCellVal == DEAD) // checks for a dead cell in the top left corner
+                {
+                    if(initialState[i+1][j] == ALIVE )
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    isDeadCorner = true;
+                }
+                if(i == 0 && j == 0 && currentCellVal == ALIVE) // checks for alive cell in top left corner
+                {
+                    if(initialState[i+1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    isAliveCorner = true;
+                }
+                if(i == width - 1 && j == 0 && currentCellVal == DEAD) // checks for a dead cell in the top right corner
+                {
+                    if(initialState[i-1][j] == ALIVE )
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i-1][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    isDeadCorner = true;
+                }
+                if(i == width - 1 && j == 0 && currentCellVal == ALIVE) // checks for alive cell in top right corner
+                {
+                    if(initialState[i-1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i-1][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    isAliveCorner = true;
+                }
+                if(i == 0 && j == height - 1 && currentCellVal == DEAD) // checks for a dead cell in the bottom left corner
+                {
+                    if(initialState[i][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    isDeadCorner = true;
+                }
+                if(i == 0 && j == height - 1 && currentCellVal == ALIVE) // checks for alive cell in bottom left corner
+                {
+                    if(initialState[i][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    isAliveCorner = true;
+                }
+                if(i == width - 1 && j == height - 1 && currentCellVal == DEAD) // checks for a dead cell in the bottom right corner
+                {
+                    if(initialState[i-1][j-1] == ALIVE  )
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i-1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    isDeadCorner = true;
+                }
+                if(i == width - 1 && j == height - 1 && currentCellVal == ALIVE) // checks for alive cell in bottom right corner
+                {
+                    if(initialState[i-1][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i-1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    isAliveCorner = true;
+                }
+                // start of edge cases
+                if(i == 0 && j > 0 && j < height - 1 )   // dead cell, left hand edge
+                {
+                    if(initialState[i][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(currentCellVal == DEAD)
+                    {
+                        isDeadCorner = true;
+                    }
+                    else
+                    {
+                        isAliveCorner = true;
+                    }
+                }
+                if(i > 0 && j == 0 && i < width - 1)   // dead cell, upper hand edge
+                {
+                    if(initialState[i-1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i-1][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(currentCellVal == DEAD)
+                    {
+                        isDeadCorner = true;
+                    }
+                    else
+                    {
+                        isAliveCorner = true;
+                    }
+                }
+
+                if(i == width - 1 && j > 0 && j < height - 1)   // dead cell, right hand edge
+                {
+                    if(initialState[i][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i-1][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i-1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i-1][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(currentCellVal == DEAD)
+                    {
+                        isDeadCorner = true;
+                    }
+                    else
+                    {
+                        isAliveCorner = true;
+                    }
+                }
+                if(i > 0 && j == height - 1 && i < width - 1)   // dead cell, bottom hand edge
+                {
+                    if(initialState[i-1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i-1][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(currentCellVal == DEAD)
+                    {
+                        isDeadCorner = true;
+                    }
+                    else
+                    {
+                        isAliveCorner = true;
+                    }
+                }
+            }
+
+            else // if its a normal case i.e 8 neighbors
+            {
+                if(currentCellVal == DEAD) // when it finds dead cell in normal case
+                {
+                    // TODO: Make a function that does what this block of code does.
+                    if(initialState[i-1][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i-1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i-1][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(countAlive == 3) // 3 alive cells surrounding it
+                    {
+                        newState[i][j] = ALIVE;
+                    }
+                }
+                if (currentCellVal == ALIVE) // when it finds alive cell in normal case
+                {
+                    // TODO: Make a function that does what this block of code does.
+                    if(initialState[i-1][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i-1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j-1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i+1][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(initialState[i-1][j+1] == ALIVE)
+                    {
+                        countAlive++;
+                    }
+                    if(countAlive == 0 || countAlive == 1 || countAlive > 3)   // when it fails GOL rules set the current cell to dead
+                    {
+                        newState[i][j] = DEAD;
+                    }
+                    if (countAlive == 2 || countAlive == 3)  // 2 or 3 alive cells surrounding it
+                    {
+                        newState[i][j] = ALIVE;
+                    }
+                }
+            }
+            if(isDeadCorner == true && isAliveCorner == false)
+            {
+                if(countAlive == 3) // set current cell to alive when 3 around it are alive
+                {
+                    newState[i][j] = ALIVE;
+                }
+            }
+            if(isDeadCorner == false && isAliveCorner == true)
+            {
+                if(countAlive == 0 || countAlive == 1 || countAlive > 3)   // when it fails GOL rules set the current cell to dead
+                {
+                    newState[i][j] = DEAD;
+                }
+                if (countAlive == 2 || countAlive == 3)  // 2 or 3 alive cells surrounding it
+                {
+                    newState[i][j] = ALIVE;
+                }
+            }
+        }
+    }
     return newState;
 }
 
@@ -94,11 +469,11 @@ void render(vector <vector<int> > const &input)   // function to render the game
 
             if(input[i][j] == DEAD)   // outputs a space for dead
             {
-                cout << ' ' << " ";
+                cout << ' ' << "";
             }
             else if (input[i][j] == ALIVE) // outputs a block ascii symbol if alive
             {
-                cout << (char)(BLOCK_ASCII_SYMBOL) << " ";
+                cout << (char)(BLOCK_ASCII_SYMBOL) << "";
             }
             if(j+1 == input[i].size() ) // outputs a '|' in every row before end of columns
             {
@@ -112,7 +487,26 @@ void render(vector <vector<int> > const &input)   // function to render the game
 // main function
 int main()
 {
-    //render(nextBoardState(randomState(20,30)));
-    testGame(); // tests the game functionality
+    vector<vector <int> > gosperGun = {{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0 },
+        { 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+    };
+    vector<vector <int> > startState = randomState(WIDTH, HEIGHT);
+
+    // Run game
+     while(true)
+      {
+        startState = nextBoardState(startState, WIDTH, HEIGHT);
+       render(startState);
+      }
+ // testGame(); // tests the game functionality
     return 0;
 }
