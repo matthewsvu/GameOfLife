@@ -11,8 +11,7 @@ Cell will die and procreate with each other by a certain set of rules listed bel
     3. Any live cell with more than 3 live neighbors becomes dead, because of overpopulation
     
     4. Any dead cell with exactly 3 live neighbors becomes alive, by reproduction
- 
- Change the const int vars 'WIDTH' and 'HEIGHT' to get a larger or smaller board size.
+ Program will start by asking for height and width of the cell board.
  
  Change the randomState function to get a higher or lower occurences of alive cells.
  
