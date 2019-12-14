@@ -11,11 +11,14 @@ die and procreate with each other by a certain set of rules listed below eternal
 #include <iostream>
 #include <cstdlib>
 #include <vector>
+#include <chrono>
+#include <thread>
 
 using namespace std;
 
-const int WIDTH = 20; // constant variable for height and width, change
-const int HEIGHT = 30;
+int WIDTH = 20; // variable for height and width can change
+int HEIGHT = 20;
+
 const int BLOCK_ASCII_SYMBOL = 254; // ascii symbol of a 'solid block'
 const int ALIVE = 1; // for alive or dead
 const int DEAD = 0;
@@ -44,7 +47,7 @@ vector<vector<int> > randomState(int width, int height)   // creates the first r
         for(int j = 0; j < height; j++)
         {
             double randomNum =  (rand() / (float)RAND_MAX); // gets random number between 0 - 1
-            if (randomNum >= 0.31) // change this to get different random percentages.
+            if (randomNum >= 0.18) // change this to get different random percentages.
             {
                 cellState = DEAD; // set to 0
             }
@@ -72,13 +75,13 @@ if there are exactly three alive neighbors set it equal to alive or '1'
 else do nothing
 
 Have to figure out when a cell is at a corner or edge (3 neighbors or 5 neighbors)
-Day 3: Refactor code, add logic for edge cases (literally): finished
+Day 3: Refactor code, add logic for edge cases (literally)
 */
 vector<vector<int> > nextBoardState (vector <vector<int> > initialState, int width, int height)
 {
-    int countAlive;
+    int countAlive; // counts how many cells are alive around the current position
 
-    vector<vector<int> > newState = deadState(width, height);
+    vector<vector<int> > newState = deadState(width, height); // initializes the a board filled with dead cells that will be used as a reference
     for(int i = 0; i < width; i++)
     {
         for(int j = 0; j < height; j++)
@@ -462,22 +465,13 @@ void render(vector <vector<int> > const &input)   // function to render the game
     {
         for(unsigned int j = 0; j < input[i].size(); j++)
         {
-            if(j == 0) // outputs a '\' every row for formatting
-            {
-                cout << '|';
-            }
-
             if(input[i][j] == DEAD)   // outputs a space for dead
             {
-                cout << ' ' << "";
+                cout << ' ';
             }
             else if (input[i][j] == ALIVE) // outputs a block ascii symbol if alive
             {
-                cout << (char)(BLOCK_ASCII_SYMBOL) << "";
-            }
-            if(j+1 == input[i].size() ) // outputs a '|' in every row before end of columns
-            {
-                cout << '|';
+                cout << (char)(BLOCK_ASCII_SYMBOL);
             }
         }
         cout << endl;
@@ -487,6 +481,7 @@ void render(vector <vector<int> > const &input)   // function to render the game
 // main function
 int main()
 {
+    // TODO: Try to make the gosper gun work.
     vector<vector <int> > gosperGun = {{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -501,12 +496,41 @@ int main()
     };
     vector<vector <int> > startState = randomState(WIDTH, HEIGHT);
 
-    // Run game
-     while(true)
-      {
-        startState = nextBoardState(startState, WIDTH, HEIGHT);
-       render(startState);
-      }
- // testGame(); // tests the game functionality
+    // Run game and asks for WIDTH AND HEIGHT
+    cout << "Enter the WIDTH of the cell board that is between 15 and 30\n";
+    cin >> WIDTH ;
+    cout << "Enter the HEIGHT of the cell board that is between 15 and 70\n";
+    cin >> HEIGHT;
+
+    if(WIDTH > 30 || WIDTH < 15 || HEIGHT > 70 || HEIGHT < 15)
+    {
+        while(WIDTH > 30 || WIDTH < 15 || HEIGHT > 70 || HEIGHT < 15) {
+            cout << "Please try again, you have a number out of the range of 15 to 70\n";
+            cout << "Enter the WIDTH of the cell board that is between 15 and 30\n";
+            cin >> WIDTH;
+            cout << "Enter the HEIGHT of the cell board that is between 15 and 70\n";
+            cin >> HEIGHT;
+        }
+        while(true) // infinite loop for rendering the next board state
+        {
+            startState = nextBoardState(startState, WIDTH, HEIGHT);
+            std::this_thread::sleep_for(std::chrono::milliseconds(150));
+            render(startState);
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        }
+    }
+    else
+    {
+        while(true) // infinite loop for rendering the next board state
+        {
+            startState = nextBoardState(startState, WIDTH, HEIGHT);
+            std::this_thread::sleep_for(std::chrono::milliseconds(150));
+            render(startState);
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        }
+    }
+
+    // tests the game functionality, remove comment if you want to test
+    // testGame();
     return 0;
 }
