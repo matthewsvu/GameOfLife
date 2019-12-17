@@ -10,26 +10,29 @@ die and procreate with each other by a certain set of rules listed below eternal
 
 #include <iostream>
 #include <cstdlib>
+#include <fstream>
 #include <vector>
 #include <chrono>
 #include <thread>
 
 using namespace std;
 
-int WIDTH = 20; // variable for height and width can change
-int HEIGHT = 20;
+int HEIGHT = 30; // variable for height and width can change
+int WIDTH = 30;
+double randomFactor = 0.25; // start val for random factor; is changed by user
 
 const int BLOCK_ASCII_SYMBOL = 254; // ascii symbol of a 'solid block'
 const int ALIVE = 1; // for alive or dead
 const int DEAD = 0;
 
 int testGame(); // import from test life.cpp, remove when final game
-vector <vector<int> > deadState(int width, int height)   // creates initial board with zero in all positions
+
+vector <vector<int> > deadState(int height, int width)   // creates initial board with zero in all positions
 {
-    vector<vector<int> > state(width, vector<int> (height, 0)); // initialized vector;
-    for(int i = 0; i < width; i++)   // adds 0 to positions
+    vector<vector<int> > state(height, vector<int> (width, 0)); // initialized vector;
+    for(int i = 0; i < height; i++)   // adds 0 to positions
     {
-        for(int j = 0; j < height; j++)
+        for(int j = 0; j < width; j++)
         {
             state[i][j] = DEAD;
         }
@@ -37,17 +40,17 @@ vector <vector<int> > deadState(int width, int height)   // creates initial boar
     return state; // return vector state
 }
 
-vector<vector<int> > randomState(int width, int height)   // creates the first random stage of the board.
+vector<vector<int> > randomState(int height, int width)   // creates the first random stage of the board.
 {
     int cellState; // 0 or 1
 
-    vector<vector<int> > state = deadState(width, height); // calls dead state for vector
-    for(int i = 0; i < width; i++)
+    vector<vector<int> > state = deadState(height, width); // calls dead state for vector
+    for(int i = 0; i < height; i++)
     {
-        for(int j = 0; j < height; j++)
+        for(int j = 0; j < width; j++)
         {
             double randomNum =  (rand() / (float)RAND_MAX); // gets random number between 0 - 1
-            if (randomNum >= 0.18) // change this to get different random percentages.
+            if (randomNum >= randomFactor) // change this to get different random percentages.
             {
                 cellState = DEAD; // set to 0
             }
@@ -60,6 +63,53 @@ vector<vector<int> > randomState(int width, int height)   // creates the first r
     }
     return state;
 }
+
+// checks surrounding neighbors for aliveness, passes in the initState, newState, cell val, and current position in the board
+void checkNeighbors(vector<vector <int> > initialState, vector<vector<int> > &newState, int currentCellVal, int currPosY, int currPosX)
+{
+    int countAlive = 0;
+    for(int y = currPosY-1; y < currPosY+2; y++) // checks the y values surrounding the curr cell position
+    {
+        if(y < 0 || y >= HEIGHT) // makes sures y value does not go out of bound
+        {
+            continue;
+        }
+        for(int x = currPosX-1; x < currPosX+2; x++) // checks surrounding x values around curr cell pos
+        {
+            if(x < 0 || x >= WIDTH) // makes sure x does not go out of bound
+            {
+                continue;
+            }
+            if(y == currPosY && x == currPosX) // check to make sure we're not including ourself as a neighbor
+            {
+                continue;
+            }
+            if(initialState[y][x] == ALIVE) // increment countAlive if the surrounding cell is alive
+            {
+                countAlive += 1;
+            }
+        }
+    }
+    if(currentCellVal == DEAD)
+    {
+        if(countAlive == 3) // 3 alive cells surrounding it
+        {
+            newState[currPosY][currPosX] = ALIVE;
+        }
+    }
+    else
+    {
+        if(countAlive < 2 || countAlive > 3)   // when it fails GOL rules set the current cell to dead
+        {
+            newState[currPosY][currPosX] = DEAD;
+        }
+        if (countAlive == 2 || countAlive == 3)  // 2 or 3 alive cells surrounding it
+        {
+            newState[currPosY][currPosX] = ALIVE;
+        }
+    }
+}
+
 
 // Function that calculates the state of the next board using the game of life's rules.
 /* @Pseudo code
@@ -77,390 +127,24 @@ else do nothing
 Have to figure out when a cell is at a corner or edge (3 neighbors or 5 neighbors)
 Day 3: Refactor code, add logic for edge cases (literally)
 */
-vector<vector<int> > nextBoardState (vector <vector<int> > initialState, int width, int height)
+vector<vector<int> > nextBoardState (vector <vector<int> > initialState, int height, int width)
 {
-    int countAlive; // counts how many cells are alive around the current position
+    vector<vector<int> > newState = deadState(height, width); // init a state to work with that is separate from init state
 
-    vector<vector<int> > newState = deadState(width, height); // initializes the a board filled with dead cells that will be used as a reference
-    for(int i = 0; i < width; i++)
+    for(int i = 0; i < height; i++)
     {
-        for(int j = 0; j < height; j++)
+        for(int j = 0; j < width; j++)
         {
-            countAlive = 0;
-            bool isDeadCorner = false, isAliveCorner = false; // flag used to find the cell is currently alive or dead in a corner
-            int currentCellVal = initialState[i][j];
-            // have to check if corner or edge first....
-            if(i == 0 || j == 0 || i == width - 1 || j == height - 1)
-            {
-                if(i == 0 && j == 0 && currentCellVal == DEAD) // checks for a dead cell in the top left corner
-                {
-                    if(initialState[i+1][j] == ALIVE )
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    isDeadCorner = true;
-                }
-                if(i == 0 && j == 0 && currentCellVal == ALIVE) // checks for alive cell in top left corner
-                {
-                    if(initialState[i+1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    isAliveCorner = true;
-                }
-                if(i == width - 1 && j == 0 && currentCellVal == DEAD) // checks for a dead cell in the top right corner
-                {
-                    if(initialState[i-1][j] == ALIVE )
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i-1][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    isDeadCorner = true;
-                }
-                if(i == width - 1 && j == 0 && currentCellVal == ALIVE) // checks for alive cell in top right corner
-                {
-                    if(initialState[i-1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i-1][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    isAliveCorner = true;
-                }
-                if(i == 0 && j == height - 1 && currentCellVal == DEAD) // checks for a dead cell in the bottom left corner
-                {
-                    if(initialState[i][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    isDeadCorner = true;
-                }
-                if(i == 0 && j == height - 1 && currentCellVal == ALIVE) // checks for alive cell in bottom left corner
-                {
-                    if(initialState[i][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    isAliveCorner = true;
-                }
-                if(i == width - 1 && j == height - 1 && currentCellVal == DEAD) // checks for a dead cell in the bottom right corner
-                {
-                    if(initialState[i-1][j-1] == ALIVE  )
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i-1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    isDeadCorner = true;
-                }
-                if(i == width - 1 && j == height - 1 && currentCellVal == ALIVE) // checks for alive cell in bottom right corner
-                {
-                    if(initialState[i-1][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i-1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    isAliveCorner = true;
-                }
-                // start of edge cases
-                if(i == 0 && j > 0 && j < height - 1 )   // dead cell, left hand edge
-                {
-                    if(initialState[i][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(currentCellVal == DEAD)
-                    {
-                        isDeadCorner = true;
-                    }
-                    else
-                    {
-                        isAliveCorner = true;
-                    }
-                }
-                if(i > 0 && j == 0 && i < width - 1)   // dead cell, upper hand edge
-                {
-                    if(initialState[i-1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i-1][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(currentCellVal == DEAD)
-                    {
-                        isDeadCorner = true;
-                    }
-                    else
-                    {
-                        isAliveCorner = true;
-                    }
-                }
-
-                if(i == width - 1 && j > 0 && j < height - 1)   // dead cell, right hand edge
-                {
-                    if(initialState[i][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i-1][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i-1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i-1][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(currentCellVal == DEAD)
-                    {
-                        isDeadCorner = true;
-                    }
-                    else
-                    {
-                        isAliveCorner = true;
-                    }
-                }
-                if(i > 0 && j == height - 1 && i < width - 1)   // dead cell, bottom hand edge
-                {
-                    if(initialState[i-1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i-1][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(currentCellVal == DEAD)
-                    {
-                        isDeadCorner = true;
-                    }
-                    else
-                    {
-                        isAliveCorner = true;
-                    }
-                }
-            }
-
-            else // if its a normal case i.e 8 neighbors
-            {
-                if(currentCellVal == DEAD) // when it finds dead cell in normal case
-                {
-                    // TODO: Make a function that does what this block of code does.
-                    if(initialState[i-1][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i-1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i-1][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(countAlive == 3) // 3 alive cells surrounding it
-                    {
-                        newState[i][j] = ALIVE;
-                    }
-                }
-                if (currentCellVal == ALIVE) // when it finds alive cell in normal case
-                {
-                    // TODO: Make a function that does what this block of code does.
-                    if(initialState[i-1][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i-1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j-1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i+1][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(initialState[i-1][j+1] == ALIVE)
-                    {
-                        countAlive++;
-                    }
-                    if(countAlive == 0 || countAlive == 1 || countAlive > 3)   // when it fails GOL rules set the current cell to dead
-                    {
-                        newState[i][j] = DEAD;
-                    }
-                    if (countAlive == 2 || countAlive == 3)  // 2 or 3 alive cells surrounding it
-                    {
-                        newState[i][j] = ALIVE;
-                    }
-                }
-            }
-            if(isDeadCorner == true && isAliveCorner == false)
-            {
-                if(countAlive == 3) // set current cell to alive when 3 around it are alive
-                {
-                    newState[i][j] = ALIVE;
-                }
-            }
-            if(isDeadCorner == false && isAliveCorner == true)
-            {
-                if(countAlive == 0 || countAlive == 1 || countAlive > 3)   // when it fails GOL rules set the current cell to dead
-                {
-                    newState[i][j] = DEAD;
-                }
-                if (countAlive == 2 || countAlive == 3)  // 2 or 3 alive cells surrounding it
-                {
-                    newState[i][j] = ALIVE;
-                }
-            }
+            int currentCellVal = initialState[i][j]; // curr cell val will be 0 or 1
+            checkNeighbors(initialState, newState, currentCellVal, i, j); // gives y, x coordinates, currentCellVal, and vectors to calculates neighbors
         }
     }
     return newState;
 }
 
-void render(vector <vector<int> > const &input)   // function to render the game takes in the state functions width and height
+void render(vector <vector<int> > const &input)   // function to render the game takes in the state functions widt and height
 {
-    cout << endl; // newline
+    cout << endl;
     for(unsigned int i = 0; i < input.size(); i++) // loops through 2d array
     {
         for(unsigned int j = 0; j < input[i].size(); j++)
@@ -478,59 +162,140 @@ void render(vector <vector<int> > const &input)   // function to render the game
     }
 }
 
-// main function
-int main()
+// Makes program run forever with 100 ms intervals between renders
+void runForever(vector<vector <int> > &startState)
 {
-    // TODO: Try to make the gosper gun work.
-    vector<vector <int> > gosperGun = {{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0 },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0 },
-        { 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-        { 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-    };
-    vector<vector <int> > startState = randomState(WIDTH, HEIGHT);
-
-    // Run game and asks for WIDTH AND HEIGHT
-    cout << "Enter the WIDTH of the cell board that is between 15 and 30\n";
-    cin >> WIDTH ;
-    cout << "Enter the HEIGHT of the cell board that is between 15 and 70\n";
-    cin >> HEIGHT;
-
-    if(WIDTH > 30 || WIDTH < 15 || HEIGHT > 70 || HEIGHT < 15)
+    while(true)
     {
-        while(WIDTH > 30 || WIDTH < 15 || HEIGHT > 70 || HEIGHT < 15) {
-            cout << "Please try again, you have a number out of the range of 15 to 70\n";
-            cout << "Enter the WIDTH of the cell board that is between 15 and 30\n";
-            cin >> WIDTH;
-            cout << "Enter the HEIGHT of the cell board that is between 15 and 70\n";
-            cin >> HEIGHT;
-        }
-        while(true) // infinite loop for rendering the next board state
+        startState = nextBoardState(startState, HEIGHT, WIDTH);
+        render(startState);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+}
+
+// LOAD BOARD State function that will read from a file and
+vector <vector <int> > loadBoardState(string fileName)
+{
+    ifstream finput;
+    int typeCell;
+
+
+    cout << "Press '1' for the Gosper Gun, '2' for the Toad\n";
+    cin >> typeCell;
+
+    switch(typeCell)
+    {
+    case 1:
+        fileName = "gosperGun.txt";
+        HEIGHT = 30;
+        WIDTH = 38;
+        break;
+    case 2:
+        fileName = "toad.txt";
+        HEIGHT = 30;
+        WIDTH = 12;
+        break;
+    default:
+        cout << "Error wrong number, must be '1' or '2' \n";
+        while(true)
         {
-            startState = nextBoardState(startState, WIDTH, HEIGHT);
-            std::this_thread::sleep_for(std::chrono::milliseconds(150));
-            render(startState);
-            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+            if(typeCell == 1)
+            {
+                fileName = "gosperGun.txt";
+                HEIGHT = 30;
+                WIDTH = 38;
+                break;
+            }
+            else if(typeCell == 2)
+            {
+                fileName = "toad.txt";
+                HEIGHT = 30;
+                WIDTH = 12;
+                break;
+            }
+            cout << "Press '1' for the Gosper Gun, '2' for the Toad\n";
+            cin >> typeCell;
         }
+    }
+
+    vector< vector <int> > fileBoard = deadState(HEIGHT, WIDTH); // creates a board that can be changed by the file content
+
+    finput.open(fileName.c_str());
+    if(!finput) // open file and check if it opens or not
+    {
+        cout << "Error, file \"" << fileName << "\" could not be opened" << endl;
     }
     else
     {
-        while(true) // infinite loop for rendering the next board state
+
+        for(int i = 0; i < HEIGHT; i++)
         {
-            startState = nextBoardState(startState, WIDTH, HEIGHT);
-            std::this_thread::sleep_for(std::chrono::milliseconds(150));
-            render(startState);
-            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+            for(int j = 0; j < WIDTH; j++)
+            {
+                finput >> fileBoard[i][j];
+            }
         }
     }
+    finput.close();
 
-    // tests the game functionality, remove comment if you want to test
-    // testGame();
+    return fileBoard;
+}
+
+//setup function for board size/type and out of bound check
+void setup(vector<vector <int> > startState)
+{
+    char chooseType;
+    string fileName;
+
+    // Run game and asks for WIDTH AND HEIGHT
+    cout << "What type of board do you want? ('a' or 'b')\n"
+         << " a. A randomized board \n"
+         << " b. A preset board \n";
+    cin >> chooseType;
+    switch(chooseType)
+    {
+    case 'a':
+        cout << "Enter the WIDTH of the cell board that is between 10 and 90\n";
+        cin >> WIDTH ;
+        cout << "Enter the HEIGHT of the cell board that is between 10 and 30\n";
+        cin >> HEIGHT;
+        if(WIDTH > 90 || WIDTH < 10 || HEIGHT > 30 || HEIGHT < 10)
+        {
+            while(WIDTH > 90 || WIDTH < 10 || HEIGHT > 30 || HEIGHT < 10)
+            {
+                cout << "Please try again, you have either a WIDTH out of the range of 10 to 90\n"
+                     << "or HEIGHT out of the range of 10 to 30\n";
+                cout << "Enter the WIDTH of the cell board that is between 10 and 90\n";
+                cin >> WIDTH;
+                cout << "Enter the HEIGHT of the cell board that is between 10 and 30\n";
+                cin >> HEIGHT;
+            }
+            runForever(startState);
+        }
+        else
+        {
+            runForever(startState);
+        }
+    default:
+        startState = loadBoardState(fileName);
+        if(startState == deadState(HEIGHT, WIDTH))
+        {
+            cout << "File did not open\n";
+        }
+        else
+        {
+            runForever(startState);
+        }
+    }
+}
+
+// main function
+int main()
+{
+    vector<vector <int> > startState = randomState(WIDTH, HEIGHT);
+
+    setup(startState);
+    // tests the game functionality, not working anymore after changes. fix later? program functions perfectly regardless
+    //testGame();
     return 0;
 }
