@@ -144,6 +144,7 @@ vector<vector<int> > nextBoardState (vector <vector<int> > initialState, int hei
 
 void render(vector <vector<int> > const &input)   // function to render the game takes in the state functions widt and height
 {
+    system("cls");
     cout << endl;
     for(unsigned int i = 0; i < input.size(); i++) // loops through 2d array
     {
